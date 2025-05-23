@@ -11,6 +11,6 @@ app.include_router(orders.router, prefix="/orders", tags=["orders"])
 app.include_router(softgoods.router, prefix="/softgoods", tags=["softgoods"])
 app.include_router(travismathews.router,prefix="/travismathews",tags=["travismathews"])
 
-# @app.get("/")
-# def home():
-#     return {"message": "Welcome to the home page!"}
+@app.get("/")
+def home():
+    return {"message": "Welcome to the home page!"}
