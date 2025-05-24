@@ -4,17 +4,7 @@ from app.database.connection import db
 from app.schemas.travismathews import TravisMathew
 from datetime import datetime
 from uuid import uuid4
-from fastapi import APIRouter, UploadFile, File, HTTPException
 import pandas as pd
-from typing import List
-from pydantic import ValidationError
-from fastapi import FastAPI, UploadFile, File
-import re
-from io import BytesIO
-import re
-from io import BytesIO
-from typing import List
-import difflib
 import pandas as pd
 from fastapi import APIRouter, UploadFile, File, HTTPException
 import difflib
@@ -22,9 +12,7 @@ import pandas as pd
 from typing import List
 from fastapi import UploadFile, File, HTTPException, APIRouter
 from pydantic import BaseModel
-from io import BytesIO  # assuming you’ve defined your Pydantic model in schemas.py
 import re
-from fastapi import FastAPI, UploadFile, File, Response
 from fastapi.responses import StreamingResponse
 import pandas as pd
 import io

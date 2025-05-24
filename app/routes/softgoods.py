@@ -11,11 +11,6 @@ from fastapi.responses import StreamingResponse
 import io
 import pandas as pd
 from app.schemas.softgoods import validate_callaway_excel
-from fastapi import APIRouter, UploadFile, File, Query
-from fastapi.responses import StreamingResponse
-import io
-import pandas as pd
-from app.schemas.softgoods import validate_callaway_excel
 # your Pydantic model for Softgoods
 
 router = APIRouter()

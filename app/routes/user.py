@@ -1,15 +1,11 @@
 from fastapi import APIRouter, HTTPException
 from app.database.connection import db  
 from fastapi import APIRouter, HTTPException, Body
-from bson import ObjectId
 from datetime import datetime
 
 from app.database.connection import db
 from datetime import datetime
 from app.schemas.user import UserCreate,UserInDB
-from fastapi.responses import JSONResponse
-from fastapi import status
-from bson import ObjectId
 
 router = APIRouter()
 @router.get("/")
