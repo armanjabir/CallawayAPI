@@ -39,6 +39,8 @@ class HardgoodsProductRow(BaseModel):
     gst: StrictInt = 0
     mrp: StrictInt = 0
     stock_88: StrictInt = 0
+    primary_image_url: StrictStr = "N/A"
+    gallery_images_url: StrictStr = "N/A"
     
     @validator('sku', pre=True, always=True)
     def validate_sku(cls, v):
@@ -68,6 +70,36 @@ class HardgoodsProductRow(BaseModel):
         if v not in ['Left Handed', 'Right Handed']:
             raise ValueError("Invalid orientation. Only 'Left Handed' or 'Right Handed' allowed.")
         return v
+    @validator('primary_image_url')
+    def validate_primary_image_url(cls, v):
+        v = str(v).strip()
+
+        valid_extensions = {'.jpg', '.png', '.svg'}
+        if not any(v.endswith(ext) for ext in valid_extensions):
+            raise ValueError(
+                f"primary_image_url must end with one of {', '.join(valid_extensions)}; got '{v}'"
+            )
+
+        # Optionally: reject full URLs or paths
+        if '/' in v or '\\' in v or '?' in v:
+            raise ValueError(f"primary_image_url should be a filename, not a path or URL: '{v}'")
+
+        return v
+    @validator('gallery_images_url')
+    def validate_gallery_images_url(cls, v):
+        v = str(v).strip()
+        if not v:
+            return v
+
+        valid_extensions = {'.jpg', '.png', '.svg'}
+        images = [img.strip() for img in v.split(',') if img.strip()]
+        for img in images:
+            if not any(img.endswith(ext) for ext in valid_extensions):
+                raise ValueError(f"Each image in gallery_images_url must end with .jpg, .png, or .svg. Invalid image: '{img}'")
+            if '/' in img or '\\' in img or '?' in img:
+                raise ValueError(f"gallery_images_url should contain only filenames, not paths or URLs. Invalid image: '{img}'")
+
+        return ', '.join(images)  # normalized
 
 # -------------------- Aliases --------------------
 COLUMN_ALIASES: Dict[str, List[str]] = {
@@ -80,6 +112,12 @@ COLUMN_ALIASES: Dict[str, List[str]] = {
     'gst': [r'^gst.*'],
     'mrp': [r'^mrp.*'],
     'stock_88': [r'stock[\s_]*88.*', r'stock 88.*'],
+    "primary_image_url": ["primary_image_url", "image", "main image", "main_image"],
+    "gallery_images_url": [
+        "gallery_images_url",
+        "gallery",
+        "gallery images",
+        "additional_images",],
 }
 
 def match_column_name(col: str, aliases: Dict[str, List[str]]) -> Optional[str]:

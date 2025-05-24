@@ -67,10 +67,11 @@ class ProductRow(BaseModel):
     variation_sku: List[StrictStr] = []
     primary_image_url: str
     gallery_images_url: Optional[str]
+    size_type: StrictStr
 
     @validator(
         'sku', 'description', 'category', 'style_code', 'color_code',
-        'size', 'season', 'color', 'length', 'gender', 'line',
+        'size', 'season', 'color', 'length', 'gender', 'line',"size_type",
         pre=True, always=True
     )
     def default_string(cls, v):
@@ -92,39 +93,11 @@ class ProductRow(BaseModel):
             raise ValueError("Description contains invalid characters '@' which are not allowed.")
         return v
 
-    @validator('variation_sku')
-    def validate_variation_sku(cls, v, values):
-        style_code = values.get('style_code')
-        color_code = values.get('color_code')
-        valid_sizes = {'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'}
-
-        if not style_code or not color_code:
-            raise ValueError("style_code and color_code are required for variation_sku validation")
-
-        base_prefix = f"{style_code}_{color_code}"
-
-        if not isinstance(v, list):
-            raise ValueError("variation_sku must be a list")
-
-        invalid_skus = []
-        for sku in v:
-            if not sku.startswith(base_prefix):
-                invalid_skus.append(sku)
-                continue
-            matched = any(re.search(rf"_{size}$", sku) for size in valid_sizes)
-            if not matched:
-                invalid_skus.append(sku)
-
-        if invalid_skus:
-            raise ValueError(
-                f"Invalid variation_sku entries {invalid_skus}. Each SKU must start with '{base_prefix}' and end with a valid size."
-            )
-
-        return v
     # @validator('variation_sku')
     # def validate_variation_sku(cls, v, values):
     #     style_code = values.get('style_code')
     #     color_code = values.get('color_code')
+    #     valid_sizes = {'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'}
 
     #     if not style_code or not color_code:
     #         raise ValueError("style_code and color_code are required for variation_sku validation")
@@ -134,14 +107,82 @@ class ProductRow(BaseModel):
     #     if not isinstance(v, list):
     #         raise ValueError("variation_sku must be a list")
 
-    #     invalid_skus = [sku for sku in v if not sku.startswith(base_prefix)]
+    #     invalid_skus = []
+    #     for sku in v:
+    #         if not sku.startswith(base_prefix):
+    #             invalid_skus.append(sku)
+    #             continue
+    #         matched = any(re.search(rf"_{size}$", sku) for size in valid_sizes)
+    #         if not matched:
+    #             invalid_skus.append(sku)
 
     #     if invalid_skus:
     #         raise ValueError(
-    #             f"Invalid variation_sku entries {invalid_skus}. Each SKU must start with '{base_prefix}'."
+    #             f"Invalid variation_sku entries {invalid_skus}. Each SKU must start with '{base_prefix}' and end with a valid size."
     #         )
 
     #     return v
+    @validator('variation_sku')
+    def validate_variation_sku(cls, v, values):
+        style_code = values.get('style_code')
+        color_code = values.get('color_code')
+
+        if not style_code or not color_code:
+            raise ValueError("style_code and color_code are required for variation_sku validation")
+
+        base_prefix = f"{style_code}_{color_code}"
+
+        if not isinstance(v, list):
+            raise ValueError("variation_sku must be a list")
+
+        invalid_skus = [sku for sku in v if not sku.startswith(base_prefix)]
+
+        if invalid_skus:
+            raise ValueError(
+                f"Invalid variation_sku entries {invalid_skus}. Each SKU must start with '{base_prefix}'."
+            )
+
+        return v
+    # @validator('primary_image_url')
+    # def validate_primary_image_url(cls, v, values):
+    #     style_code = values.get('style_code')
+    #     color_code = values.get('color_code')
+
+    #     if not style_code or not color_code:
+    #         raise ValueError("style_code and color_code are required to validate primary_image_url")
+
+    #     base_prefix = f"{style_code}_{color_code}"
+    #     valid_patterns = [
+    #         f"{base_prefix}.jpg",
+    #         f"{base_prefix}_A.jpg"
+    #     ]
+
+    #     if v not in valid_patterns:
+    #         raise ValueError(
+    #             f"primary_image_url must be one of {valid_patterns}, got '{v}'"
+    #         )
+
+    #     return v
+    # @validator("gallery_images_url")
+    # def validate_gallery_images_url(cls, v, values):
+    #     if not v:
+    #         return v
+
+    #     style_code = values.get("style_code")
+    #     color_code = values.get("color_code")
+    #     if not style_code or not color_code:
+    #         raise ValueError("Both style_code and color_code must be present for validating gallery_images_url")
+
+    #     # Split by comma and validate each file
+    #     images = [img.strip() for img in v.split(",")]
+
+    #     for img in images:
+    #         # Validate the pattern like: 1MY576_1WHT_A.jpg or 1MY576_1WHT_2.jpg
+    #         if not re.fullmatch(rf"{style_code}_{color_code}_[A-D1-4]\.jpg", img):
+    #             raise ValueError(f"Invalid gallery image filename: {img}")
+
+    #     return v
+
     @validator('primary_image_url')
     def validate_primary_image_url(cls, v, values):
         style_code = values.get('style_code')
@@ -151,9 +192,11 @@ class ProductRow(BaseModel):
             raise ValueError("style_code and color_code are required to validate primary_image_url")
 
         base_prefix = f"{style_code}_{color_code}"
+        valid_extensions = ('.jpg', '.png', '.svg')
         valid_patterns = [
-            f"{base_prefix}.jpg",
-            f"{base_prefix}_A.jpg"
+            f"{base_prefix}{ext}" for ext in valid_extensions
+        ] + [
+            f"{base_prefix}_A{ext}" for ext in valid_extensions
         ]
 
         if v not in valid_patterns:
@@ -162,6 +205,7 @@ class ProductRow(BaseModel):
             )
 
         return v
+
     @validator("gallery_images_url")
     def validate_gallery_images_url(cls, v, values):
         if not v:
@@ -172,15 +216,27 @@ class ProductRow(BaseModel):
         if not style_code or not color_code:
             raise ValueError("Both style_code and color_code must be present for validating gallery_images_url")
 
-        # Split by comma and validate each file
+        valid_extensions = ('.jpg', '.png', '.svg')
+        pattern = rf"{style_code}_{color_code}_[A-D1-4]({ '|'.join([re.escape(ext) for ext in valid_extensions]) })$"
+
         images = [img.strip() for img in v.split(",")]
 
         for img in images:
-            # Validate the pattern like: 1MY576_1WHT_A.jpg or 1MY576_1WHT_2.jpg
-            if not re.fullmatch(rf"{style_code}_{color_code}_[A-D1-4]\.jpg", img):
+            if not re.fullmatch(pattern, img):
                 raise ValueError(f"Invalid gallery image filename: {img}")
 
         return v
+    @validator('size_type', pre=True, always=True)
+    def validate_size_type(cls, v):
+        # Allow pre-processing to handle empty/defaultable cases
+        if v is None or str(v).strip().lower() in {'', 'none', 'nan'}:
+            return v
+
+        # Enforce string type
+        if not isinstance(v, str):
+            raise ValueError(f"Invalid size_type value '{v}' — must be a string.")
+
+        return v.strip()
     
 
 
@@ -194,7 +250,7 @@ COLUMN_ALIASES: Dict[str, List[str]] = {
     'style_code': [r'style[\s_]*code.*', r'style_code.*', r'style code.*'],
     'color_code': [r'color[\s_]*code.*', r'color_code.*', r'color code.*'],
     'color': [r'^color.*'],
-    'size': [r'^size.*'],
+    'size': ['size'],
     'length': [r'^length.*'],
     'gender': [r'^gender.*'],
     'line': [r'^line.*'],
@@ -204,7 +260,11 @@ COLUMN_ALIASES: Dict[str, List[str]] = {
     'mrp': [r'^mrp.*'],
     'variation_sku': [r'variation.*sku.*'],
     "primary_image_url": [r"primary_image_url.*"],
-    "gallery_images_url": [r"gallery[_\s]*images[_\s]*url.*"]
+    "gallery_images_url": [r"gallery[_\s]*images[_\s]*url.*"],
+    "size_type": [
+        "size_type",
+        "sizetype",
+        "size-type"],
 }
 
 def match_column_name(col: str, aliases: Dict[str, List[str]]) -> Optional[str]:
@@ -307,6 +367,19 @@ def validate_product_excel(df: pd.DataFrame) -> (pd.DataFrame, List[str]):
                 elif not isinstance(value, list):
                     logs.append(f"Row {index + 2}: Invalid variation_sku format '{value}' — expected comma-separated string. Defaulting to empty list.")
                     value = []
+            elif key == 'size_type':
+                if isinstance(value, str):
+                    stripped_value = value.strip()
+                    if stripped_value == "":
+                        logs.append(f"Row {index + 2}: Empty size_type — defaulting to 'N/A'.")
+                        value = "N/A"
+                    else:
+                        value = stripped_value
+                else:
+                    logs.append(f"Row {index + 2}: Invalid size_type value '{value}' — expected a string. Defaulting to 'N/A'.")
+                    value = "N/A"
+
+            
 
             row_dict[key] = value
 

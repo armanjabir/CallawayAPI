@@ -51,6 +51,14 @@ COLUMN_ALIASES = {
     'stock_88': [r'stock[\s_]*88.*'],
     'gst': [r'^gst.*'],
     'mrp': [r'^mrp.*'],
+    "primary_image_url": ["primary_image_url", "image", "main image", "main_image"],
+    "gallery_images_url": [
+        "gallery_images_url",
+        "gallery",
+        "gallery images",
+        "additional_images",],
+        "series": [r"series.*"],
+        "type": [r"type.*",]
 }
 
 
@@ -81,6 +89,10 @@ class CallawayProductRow(BaseModel):
     stock_88: StrictInt = 0
     gst: StrictInt = 0
     mrp: StrictInt = 0
+    primary_image_url: StrictStr = "N/A"
+    gallery_images_url: StrictStr = "N/A"
+    series: Optional[StrictStr] = "N/A"
+    type: Optional[StrictStr] = "N/A"
 
 
     @validator('sku', pre=True)
@@ -109,6 +121,45 @@ class CallawayProductRow(BaseModel):
             return int(float(str(v)))
         except:
             return 0
+    @validator('primary_image_url')
+    def validate_primary_image_url(cls, v):
+        v = str(v).strip()
+
+        valid_extensions = {'.jpg', '.png', '.svg'}
+        if not any(v.endswith(ext) for ext in valid_extensions):
+            raise ValueError(
+                f"primary_image_url must end with one of {', '.join(valid_extensions)}; got '{v}'"
+            )
+
+        # Optionally: reject full URLs or paths
+        if '/' in v or '\\' in v or '?' in v:
+            raise ValueError(f"primary_image_url should be a filename, not a path or URL: '{v}'")
+
+        return v
+    @validator('gallery_images_url')
+    def validate_gallery_images_url(cls, v):
+        v = str(v).strip()
+        if not v:
+            return v
+
+        valid_extensions = {'.jpg', '.png', '.svg'}
+        images = [img.strip() for img in v.split(',') if img.strip()]
+        for img in images:
+            if not any(img.endswith(ext) for ext in valid_extensions):
+                raise ValueError(f"Each image in gallery_images_url must end with .jpg, .png, or .svg. Invalid image: '{img}'")
+            if '/' in img or '\\' in img or '?' in img:
+                raise ValueError(f"gallery_images_url should contain only filenames, not paths or URLs. Invalid image: '{img}'")
+
+        return ', '.join(images)  # normalized
+    @validator('series', 'type', pre=True, always=True)
+    def validate_series_type(cls, v):
+        if v is None or str(v).strip().lower() in {'', 'none', 'nan'}:
+            return "N/A"
+        if not isinstance(v, str):
+            # Replace invalid input with 'N/A' silently
+            return "N/A"
+        return v.strip()
+    
 
 # --------------------------
 # Excel Validation Logic
@@ -143,6 +194,12 @@ def validate_callaway_excel(df: pd.DataFrame) -> (pd.DataFrame, List[str]):
         raw_data = row.to_dict()
         row_dict = {}
         skip_row = False
+        for field in ['series', 'type']:
+            val = raw_data.get(field)
+            if val is None or str(val).strip().lower() in {'', 'none', 'nan'}:
+                logs.append(f"Row {index + 2}: Field '{field}' is empty — returning 'N/A'.")
+            elif not isinstance(val, str):
+                logs.append(f"Row {index + 2}: Invalid {field} value '{val}' — defaulting to 'N/A'.")
 
         for key in CallawayProductRow.__annotations__.keys():
             value = raw_data.get(key, "")
