@@ -7,21 +7,12 @@ from uuid import uuid4
 import pandas as pd
 import pandas as pd
 from fastapi import APIRouter, UploadFile, File, HTTPException
-import difflib
 import pandas as pd
-from typing import List
-from fastapi import UploadFile, File, HTTPException, APIRouter
-from pydantic import BaseModel
-import re
 from fastapi.responses import StreamingResponse
 import pandas as pd
 import io
 from app.schemas.travismathews import validate_product_excel
 from fastapi import UploadFile, File, APIRouter, Query
-from fastapi.responses import StreamingResponse
-import io
-import pandas as pd
-
 
 router = APIRouter()
 @router.get("/")

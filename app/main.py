@@ -10,6 +10,17 @@ app.include_router(ogios.router,prefix="/ogios",tags=["ogios"])
 app.include_router(orders.router, prefix="/orders", tags=["orders"])
 app.include_router(softgoods.router, prefix="/softgoods", tags=["softgoods"])
 app.include_router(travismathews.router,prefix="/travismathews",tags=["travismathews"])
+app.include_router(user.router, prefix="/api", tags=["Users"])
+
+
+
+# --- app/main.py ---
+from fastapi import FastAPI
+from app.routes import user, collection
+
+
+app.include_router(user.router)
+app.include_router(collection.router)
 
 @app.get("/")
 def home():
