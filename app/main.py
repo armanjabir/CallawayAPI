@@ -10,7 +10,7 @@ app.include_router(ogios.router,prefix="/ogios",tags=["ogios"])
 app.include_router(orders.router, prefix="/orders", tags=["orders"])
 app.include_router(softgoods.router, prefix="/softgoods", tags=["softgoods"])
 app.include_router(travismathews.router,prefix="/travismathews",tags=["travismathews"])
-app.include_router(user.router, prefix="/api", tags=["Users"])
+# app.include_router(user.router, prefix="/api", tags=["Users"])
 
 
 
